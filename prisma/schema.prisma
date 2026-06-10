@@ -1,0 +1,61 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Startup {
+  id            String          @id @default(uuid())
+  name          String
+  description   String          @db.Text
+  industry      String
+  businessModel String
+  status        String          // e.g., "Failed", "Acquired", "Active", "Successful"
+  fundingRaised Float           // In Millions USD
+  foundedYear   Int
+  closedYear    Int?
+  website       String?
+  failureReasons FailureReason[]
+  lessonsLearned LessonLearned[]
+
+  @@map("startups")
+}
+
+model FailureReason {
+  id          String   @id @default(uuid())
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  category    String   // e.g. "Product Market Fit", "Customer Acquisition Cost", etc.
+  description String   @db.Text
+
+  @@map("failureReasons")
+}
+
+model LessonLearned {
+  id          String   @id @default(uuid())
+  startupId   String
+  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  lesson      String   @db.Text
+
+  @@map("lessonsLearned")
+}
+
+model MarketTrend {
+  id         String @id @default(uuid())
+  industry   String
+  trend      String @db.Text
+  growthRate Float
+
+  @@map("marketTrends")
+}
+
+model StartupAnalysis {
+  id             String   @id @default(uuid())
+  startupIdea    String   @db.Text
+  analysisResult Json     // Stores structured JSON response from mock AI
+  createdAt      DateTime @default(now())
+
+  @@map("startupAnalyses")
+}

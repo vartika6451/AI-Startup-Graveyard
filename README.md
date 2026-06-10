@@ -1,206 +1,141 @@
-# Startup Graveyard: Failure Intelligence & Due Diligence Canvas
+# 🪦 Startup Graveyard
+### Failure Intelligence & Due Diligence Canvas
 
-A comprehensive full-stack analytical platform designed to compile historical startup failures and evaluate new concepts against established risk dimensions. This documentation details the project's conceptual architecture, directory layouts, the underlying theories of the chosen technology stack, and local operational workflows.
+> Most startup tools celebrate success stories. This one studies the dead — so you don't join them.
 
----
+Startup Graveyard is a full-stack analytical platform that evaluates new startup ideas against a database of historical failures. Submit an idea, get back a risk report showing who tried it before, why they failed, recurring failure patterns, market timing analysis, and strategic pivot recommendations.
 
-## Table of Contents
-1. [Core Architectural Overview](#1-core-architectural-overview)
-2. [Project Layout & Structural Flow](#2-project-layout--structural-flow)
-3. [Deep Dive: Technologies & Theoretical Foundations](#3-deep-dive-technologies--theoretical-foundations)
-   - [Next.js 15 App Router Architecture](#nextjs-15-app-router-architecture)
-   - [React 19 Rendering Model](#react-19-rendering-model)
-   - [Tailwind CSS v4 Utility Architecture](#tailwind-css-v4-utility-architecture)
-   - [Prisma ORM & PostgreSQL Database Layer](#prisma-orm--postgresql-database-layer)
-   - [Recharts Visual Representation Layer](#recharts-visual-representation-layer)
-   - [TypeScript Static Verification System](#typescript-static-verification-system)
-4. [Environment Configuration Theory](#4-environment-configuration-theory)
-5. [Getting Started & Local Setup](#5-getting-started--local-setup)
-6. [Database Lifecycle & Synchronizations](#6-database-lifecycle--synchronizations)
-7. [Development and Deployment Workflows](#7-development-and-deployment-workflows)
+**Built for:** Investors, founders, and analysts who want brutal honesty before writing a check or quitting their job.
 
 ---
 
-## 1. Core Architectural Overview
+## What It Does
 
-The **Startup Graveyard** follows a modular full-stack architecture built on a single-repository layout. The system relies on a **three-tier architecture**:
+| Feature | Description |
+|---|---|
+| **Failure Intelligence** | Matches your idea against real historical analogues from the failure database |
+| **Risk Scoring** | Quantifies risk across dimensions — timing, competition, operations, unit economics |
+| **Pattern Recognition** | Surfaces recurring failure themes across similar dead companies |
+| **Market Timing Analysis** | Evaluates whether conditions today differ from when prior attempts failed |
+| **Pivot Recommendations** | Generates strategic alternatives based on what changed in the market |
+| **Analysis History** | Persists all submitted analyses for later review and comparison |
 
-```mermaid
-graph TD
-    subgraph Client Tier [UI & Interaction Layer]
-        A[Landing Page]
-        B[Dashboard Console]
-        C[Interactive Idea Canvas]
-        D[Database Explorer]
-    end
+---
 
-    subgraph Service Tier [Application Logic Layer]
-        E[API Endpoints Routing]
-        F[Heuristic Classification Engine]
-        G[Statistical Risk Evaluator]
-        H[Pivot Generation Service]
-    end
+## Tech Stack
 
-    subgraph Database Tier [Persistence Layer]
-        I[PostgreSQL Database]
-        J[Prisma ORM Layer]
-    end
+| Layer | Technology | Why |
+|---|---|---|
+| Framework | Next.js 15 (App Router) | File-system routing + serverless API routes in one codebase |
+| UI | React 19 | Concurrent rendering, server components, context-driven state |
+| Styling | Tailwind CSS v4 | Utility-first, zero config files, native CSS variables |
+| Database | PostgreSQL + Prisma ORM | Relational data model with type-safe auto-generated query client |
+| Charts | Recharts | SVG-based, React-native chart components |
+| Language | TypeScript | Static type safety across DB queries, API contracts, and UI props |
 
-    Client Tier -->|HTTP Requests / JSON API| Service Tier
-    Service Tier -->|Object Relations / SQL Client| Database Tier
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────┐
+│           Client Tier (UI)              │
+│  Landing · Dashboard · Idea Canvas      │
+│  Database Explorer · Settings           │
+└────────────────┬────────────────────────┘
+                 │ HTTP / JSON API
+┌────────────────▼────────────────────────┐
+│         Service Tier (Logic)            │
+│  API Routes · Classification Engine     │
+│  Risk Evaluator · Pivot Generator       │
+└────────────────┬────────────────────────┘
+                 │ Prisma ORM
+┌────────────────▼────────────────────────┐
+│         Database Tier                   │
+│  PostgreSQL · Startups · Failures       │
+│  Lessons · Market Trends · Analyses     │
+└─────────────────────────────────────────┘
 ```
 
-*   **Client Tier (User Interface)**: Fully responsive layouts displaying graphical metrics, validation fields, and tables. It coordinates rendering states and themes (Light/Dark mode) across user routes.
-*   **Service Tier (Application Logic)**: Handles incoming client payloads. It extracts keyphrase patterns, determines target industries, calculates risk categories, correlates database records of historical analogues, and drafts strategic pivot configurations.
-*   **Database Tier (Persistence)**: Houses structured relational data, logging startup histories, market metrics, and past user idea analyses.
+The analytics engine at the core extracts keyphrase patterns from submitted ideas, queries historical analogues, computes risk percentages using heuristic scoring, and drafts pivot configurations — all server-side before returning a structured report to the client.
 
 ---
 
-## 2. Project Layout & Structural Flow
+## Database Schema
 
-The codebase divides directories to isolate backend schema declarations, reusable utility libraries, API handlers, and visual page components:
+Five core models power the platform:
 
-*   **Database Module (`prisma/`)**: Declares the operational structure of the application. Contains the database schema definitions, automatic migration scripts, and seed files.
-*   **Utility & Services Library (`src/lib/`)**: The core engine of the application.
-    *   **Database Client (`db.ts`)**: Initializes the connection pools and handles database access controls.
-    *   **Analytics Engine (`services/analytics.ts`)**: Implements mathematical and heuristic equations to categorize ideas, compute risk percentages, and determine pivots.
-    *   **Global Context (`context/`)**: Controls environment-wide state machines such as visual styles and display theme toggles.
-*   **Application Routing & Views (`src/app/`)**: Maps physical directory paths to browser URLs (using Next.js App Router).
-    *   **Core Landing Page (`page.tsx`)**: Promotes application services, displays case study models, and provides navigation triggers.
-    *   **Dashboard Shell (`dashboard/`)**: Features analytical views, interactive pages, database browsing, and application settings.
-    *   **Serverless Handlers (`api/`)**: Houses backend REST API routing mechanisms.
+- **`Startup`** — company name, category, funding raised, current status
+- **`FailureReason`** — specific causes linked to each startup (one-to-many)
+- **`LessonLearned`** — actionable takeaways extracted per failure
+- **`MarketTrend`** — industry growth rates used for timing analysis
+- **`StartupAnalysis`** — persisted records of user-submitted idea analyses
+
+Cascade deletes are configured throughout — removing a startup cleans up all associated failure reasons and lessons automatically.
 
 ---
 
-## 3. Deep Dive: Technologies & Theoretical Foundations
 
-### Next.js 15 App Router Architecture
+## Scripts
 
-#### Conceptual Theory
-Next.js utilizes file-system routing built on top of React Server Components (RSC). It introduces a hybrid model:
-*   **React Server Components (RSC)**: Pages are evaluated and rendered on the server. The server transmits pre-built UI components directly to the browser, reducing initial bundle sizes, removing client-side layout rendering times, and optimizing Search Engine Optimization (SEO).
-*   **Client Components**: Subsections of the page that contain user interactions (e.g., text inputs, buttons, sliders) are marked for execution in the browser. During rendering, the framework handles the communication between static server code and dynamic client code.
-*   **Turbopack Compiler**: A Rust-based successor to Webpack. It compiles modules in parallel and uses incremental caching, resulting in instant hot-reloading in local development environments.
-
-#### How it is used in the project
-Next.js handles all client routes (such as the main landing page, dashboard explorer, and setting screens) and exposes backend endpoints. For instance, submission routes process startup ideas on the server, interact with the PostgreSQL database, and return formatted results without requiring a separate server daemon.
-
----
-
-### React 19 Rendering Model
-
-#### Conceptual Theory
-React operates on a declarative UI paradigm using a Virtual Document Object Model (Virtual DOM). When UI states change, React computes the structural difference between the existing display state and the target layout, then performs optimized operations to update the browser window. React 19 optimizes data loading, UI hydration, hook executions, and concurrent rendering cycles.
-
-#### How it is used in the project
-React coordinates interactive states across the analytical console:
-*   Locks input forms and displays animated loading blocks while calculations are computed.
-*   Swaps tabs dynamically to toggle between list views, opportunity scores, and recommendations.
-*   Updates visual themes by distributing settings down the component tree using React Context.
+| Command | Description |
+|---|---|
+| `npm run dev` | Start dev server with Turbopack hot-reload |
+| `npm run build` | Compile optimized production bundle |
+| `npm run start` | Run the production server |
+| `npx prisma db push` | Sync schema changes to database |
+| `npx prisma db seed` | Load historical failure seed data |
+| `npx prisma studio` | Open visual database explorer |
 
 ---
 
-### Tailwind CSS v4 Utility Architecture
+## Project Structure
 
-#### Conceptual Theory
-Tailwind CSS v4 replaces traditional style compilation with a utility-first compilation engine written in Rust. Instead of writing custom CSS selectors, developers apply utility classes directly in the HTML layout. At build time, the compiler scans all files, detects active classes, and creates a minimized stylesheet containing only the styling rules that are actually used.
-
-Version 4 does away with separate configuration files. It uses native CSS custom properties defined in the main stylesheet to build and extend theme parameters.
-
-#### How it is used in the project
-All styles, colors, layouts, and animations are handled via Tailwind v4 utility values:
-*   **Color Palette**: Custom colors (deep slate, dark blue-blacks, indigo accents) are bound to CSS variables to support seamless Dark and Light modes.
-*   **Glassmorphism Effects**: Cards employ backdrop-filter blur parameters and semi-transparent borders to present a premium look.
-*   **Micro-Animations**: Shimmer gradients animate loading placeholders, and pulse rules indicate ongoing background tasks.
-
----
-
-### Prisma ORM & PostgreSQL Database Layer
-
-#### Conceptual Theory
-*   **Object-Relational Mapping (ORM)**: Translates database rows into native language objects. Developers define database structures inside a central schema file, and the ORM auto-generates query clients, preventing SQL-injection vulnerabilities and database mismatch errors.
-*   **Relational Model (PostgreSQL)**: Organizes data into structured tables with strict column definitions, unique IDs (UUIDs), and constraints.
-*   **Connection Pooling**: Managing database connections can consume system resources. A connection pool keeps a set of active connections open, reusing them for incoming requests instead of opening and closing a new connection for every query.
-
-#### How it is used in the project
-The database schema tracks five core objects:
-1.  **Startup**: Houses fields for names, statuses, and funding amounts.
-2.  **FailureReason**: Connects failures directly to startups using one-to-many relationships.
-3.  **LessonLearned**: Logs recommendations linked to corresponding failed startups.
-4.  **MarketTrend**: Details industry growth rates used in market evaluations.
-5.  **StartupAnalysis**: Persists records of validated ideas for later review.
-
-To protect system resources, a connection pool manager wraps the Postgres client driver, sharing connections across the Next.js API endpoints. Relationships are configured with cascade deletes, ensuring that deleting a startup automatically cleans up all associated records.
+```
+startup-graveyard/
+├── prisma/
+│   ├── schema.prisma          # Database schema & relationships
+│   ├── migrations/            # Auto-generated migration history
+│   └── seed.ts                # Historical startup failure data
+├── src/
+│   ├── app/
+│   │   ├── page.tsx           # Landing page
+│   │   ├── dashboard/         # Dashboard, explorer, settings
+│   │   └── api/               # Serverless API route handlers
+│   └── lib/
+│       ├── db.ts              # Prisma client + connection pooling
+│       ├── services/
+│       │   └── analytics.ts   # Risk scoring & classification engine
+│       └── context/           # Theme and global state providers
+└── .env.example
+```
 
 ---
 
-### Recharts Visual Representation Layer
+## How a Full Analysis Works
 
-#### Conceptual Theory
-Recharts uses Scalable Vector Graphics (SVG) instead of HTML Canvas to draw graphs. Each graph component is a native React node, making it easy to handle hover actions, scale dynamically inside flexible layouts, and apply CSS transition animations.
-
-#### How it is used in the project
-Recharts displays the analytical data from the evaluation engine:
-*   **Failure Reasons Distribution**: A vertical bar chart on the main dashboard showing which failure reasons are most common.
-*   **Heuristic Risk Mappings**: Bar graphs detailing risks across dimensions (such as timing, operations, and competition) with colors that shift based on risk levels.
-
----
-
-### TypeScript Static Verification System
-
-#### Conceptual Theory
-TypeScript introduces static type verification to JavaScript. Developers declare strict structures for variables, API calls, and component props. The compiler verifies these structures during coding, catching typos and missing parameters before execution.
-
-#### How it is used in the project
-TypeScript acts as the quality gatekeeper for the app's analytical service:
-*   Defines models for metrics, recommendations, and analysis scores.
-*   Ensures that database queries return fields matching the structures expected by the React components.
+1. User submits a startup idea via the Idea Canvas
+2. The API route extracts industry signals and keyphrases
+3. The analytics engine queries the database for historical analogues
+4. Risk scores are computed across dimensions (timing, competition, operations)
+5. Failure patterns are surfaced from matching companies
+6. A pivot recommendation is generated based on current market conditions
+7. The full analysis is returned to the client and persisted in `StartupAnalysis`
+8. Recharts renders the risk distribution and failure reason charts
 
 ---
 
-## 4. Environment Configuration Theory
+## Contributing
 
-The application uses environment variables to keep sensitive credentials and system endpoints outside of version control.
-*   `DATABASE_URL`: Contains credentials, host locations, and target database parameters used by the database driver.
-*   `NEXT_PUBLIC_APP_URL`: Declares the base path for client requests and asset links, ensuring absolute URLs resolve correctly in different environments.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'add your feature'`
+4. Push and open a pull request
 
----
-
-## 5. Getting Started & Local Setup
-
-### Step 1: Initialize Node.js Environment
-Make sure Node.js v20.x or higher is installed. This runtime compiles the project modules and executes the local server environment.
-
-### Step 2: Set Up Project Dependencies
-Use the package manager to install all required libraries (Next.js, React, Tailwind, Prisma, Recharts, Lucide, and TypeScript compilation tools) into the local folder.
-
-### Step 3: Configure Database Server
-Ensure a PostgreSQL database is active. You can run PostgreSQL locally using standard database software, or start a pre-configured database container using Docker.
+When adding new startup failure data to the seed file, please include: company name, founding year, shutdown year, funding raised, failure reasons, and cited sources.
 
 ---
 
-## 6. Database Lifecycle & Synchronizations
+## License
 
-All schema updates and database operations are managed via the command line using Prisma:
-
-### Step A: Push Schema Definitions
-To sync your database tables with the layout defined in the schema file (ideal for development environments).
-
-### Step B: Load Initial Seed Data
-Run the database seed script to import historical startup failure studies and industry trends.
-
-### Step C: Inspect Data visually
-To browse database records, run queries, and modify tables in a visual interface, open the database studio.
-
----
-
-## 7. Development and Deployment Workflows
-
-### Run Local Development Server
-Start the development server with Turbopack enabled. Open the local address inside your browser. Edits to the pages will hot-reload automatically.
-
-### Compile Build Package
-To compile the codebase for production deployment, run the compiler. It performs code optimization, compresses images, bundles CSS variables, and outputs a ready-to-run package.
-
-### Run Production Server
-Once built, launch the production server. This runs the optimized, compiled version of the application.
+MIT — see [LICENSE](LICENSE) for details.
