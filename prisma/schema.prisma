@@ -59,3 +59,14 @@ model StartupAnalysis {
 
   @@map("startupAnalyses")
 }
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String   // Hashed password
+  role      String   // "Founder", "VC Investor", etc.
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}

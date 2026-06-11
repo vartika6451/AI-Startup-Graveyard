@@ -22,146 +22,89 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Initial default user for quick demo access
-const DEFAULT_DEMO_USER = {
-  id: "demo-admin-id",
-  name: "Graveyard Admin",
-  email: "admin@graveyard.com",
-  password: "admin123", // Stored simply for mock validation
-  role: "VC Investor",
-  createdAt: new Date().toISOString(),
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Load active session and initialize mock database on mount
+  // Retrieve session on mount
   useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        // Initialize users database if not present
-        const existingUsers = localStorage.getItem("sg_users");
-        if (!existingUsers) {
-          localStorage.setItem(
-            "sg_users",
-            JSON.stringify([
-              {
-                id: DEFAULT_DEMO_USER.id,
-                name: DEFAULT_DEMO_USER.name,
-                email: DEFAULT_DEMO_USER.email,
-                password: DEFAULT_DEMO_USER.password,
-                role: DEFAULT_DEMO_USER.role,
-                createdAt: DEFAULT_DEMO_USER.createdAt,
-              },
-            ])
-          );
+    async function initAuth() {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.user) {
+            setUser(data.user);
+          }
         }
-
-        // Check for active session
-        const session = localStorage.getItem("sg_session");
-        if (session) {
-          setUser(JSON.parse(session));
-        }
+      } catch (err) {
+        console.error("Failed to fetch active session", err);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error("Failed to read auth state from localStorage", e);
-    } finally {
-      setIsLoading(false);
     }
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    // Add artificial delay for realistic UX/shimmer animations
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
     try {
-      const usersStr = localStorage.getItem("sg_users");
-      const users = usersStr ? JSON.parse(usersStr) : [];
-      
-      const foundUser = users.find(
-        (u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!foundUser) {
+      const data = await response.json();
+
+      if (!response.ok) {
         setIsLoading(false);
-        return { success: false, error: "Invalid email or password" };
+        return { success: false, error: data.error || "Login failed" };
       }
 
-      // Safe user payload (exclude password)
-      const userPayload: User = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        role: foundUser.role,
-        createdAt: foundUser.createdAt,
-      };
-
-      localStorage.setItem("sg_session", JSON.stringify(userPayload));
-      setUser(userPayload);
+      setUser(data);
       setIsLoading(false);
       return { success: true };
     } catch (err) {
       setIsLoading(false);
-      return { success: false, error: "Authentication system error" };
+      return { success: false, error: "Network or server connection failed" };
     }
   };
 
   const register = async (name: string, email: string, password: string, role: string) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     try {
-      const usersStr = localStorage.getItem("sg_users") || "[]";
-      const users = JSON.parse(usersStr);
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role }),
+      });
 
-      const emailExists = users.some((u: any) => u.email.toLowerCase() === email.toLowerCase());
-      if (emailExists) {
+      const data = await response.json();
+
+      if (!response.ok) {
         setIsLoading(false);
-        return { success: false, error: "An account with this email already exists" };
+        return { success: false, error: data.error || "Registration failed" };
       }
 
-      const newUser = {
-        id: "usr_" + Math.random().toString(36).substr(2, 9),
-        name,
-        email: email.toLowerCase(),
-        password,
-        role,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Store in users DB
-      users.push(newUser);
-      localStorage.setItem("sg_users", JSON.stringify(users));
-
-      // Log the user in directly
-      const userPayload: User = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        createdAt: newUser.createdAt,
-      };
-
-      localStorage.setItem("sg_session", JSON.stringify(userPayload));
-      setUser(userPayload);
+      setUser(data);
       setIsLoading(false);
       return { success: true };
     } catch (err) {
       setIsLoading(false);
-      return { success: false, error: "Registration system error" };
+      return { success: false, error: "Network or server connection failed" };
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
-      localStorage.removeItem("sg_session");
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Failed to notify backend of logout", err);
+    } finally {
       setUser(null);
       router.push("/login");
-    } catch (err) {
-      console.error("Failed to log out", err);
     }
   };
 
