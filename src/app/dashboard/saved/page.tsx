@@ -12,7 +12,7 @@ export default async function SavedPage() {
   });
 
   // Map database json results to typescript structure
-  const formattedReports = reports.map((r) => ({
+  const formattedReports = reports.map((r: { id: string; startupIdea: string; analysisResult: any; createdAt: Date }) => ({
     id: r.id,
     startupIdea: r.startupIdea,
     analysisResult: r.analysisResult as any,
