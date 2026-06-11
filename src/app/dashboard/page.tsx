@@ -34,7 +34,7 @@ export default async function DashboardPage() {
 
   // Aggregate failure reason counts
   const categoryMap: Record<string, number> = {};
-  failureReasons.forEach((r) => {
+  failureReasons.forEach((r: { category: string }) => {
     categoryMap[r.category] = (categoryMap[r.category] || 0) + 1;
   });
 
