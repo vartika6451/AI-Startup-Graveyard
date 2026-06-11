@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/context/auth";
 import {
   Skull,
   Sparkles,
@@ -12,9 +13,12 @@ import {
   CheckCircle,
   Database,
   Terminal,
+  LogOut,
 } from "lucide-react";
 
 export default function LandingPage() {
+  const { isAuthenticated, logout } = useAuth();
+
   return (
     <div className="min-h-screen bg-[#122336] text-[#f8fafc] font-sans selection:bg-primary selection:text-white">
       {/* Dynamic Glow Accents */}
@@ -35,13 +39,43 @@ export default function LandingPage() {
           <a href="#preview" className="hover:text-foreground transition-colors">Example analysis</a>
           <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
         </div>
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-1.5 px-4.5 py-2 rounded-lg bg-card border border-border/80 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-secondary transition-all"
-        >
-          Console
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        
+        <div className="flex items-center gap-4">
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-xs font-bold uppercase tracking-wider text-primary-foreground transition-all shadow-sm"
+              >
+                Dashboard
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <button
+                onClick={logout}
+                className="flex items-center justify-center h-8.5 w-8.5 rounded-lg bg-card border border-border/80 text-muted-foreground hover:text-destructive hover:bg-destructive/5 hover:border-destructive/30 transition-all cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors mr-2"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 px-4.5 py-2 rounded-lg bg-card border border-border/80 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-secondary transition-all"
+              >
+                Console
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Hero Section */}

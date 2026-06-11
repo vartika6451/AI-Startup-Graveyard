@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/lib/context/theme";
+import { useAuth } from "@/lib/context/auth";
 import {
   LayoutDashboard,
   Sparkles,
@@ -18,6 +19,7 @@ import {
   X,
   Skull,
   RotateCcw,
+  LogOut,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -38,9 +40,18 @@ const sidebarItems: SidebarItem[] = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
+
+  // Protected Route Logic
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const handleResetDB = async () => {
     if (!confirm("Are you sure you want to reset and reseed the database? This deletes all current analysis history.")) {
@@ -62,6 +73,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setResetting(false);
     }
   };
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#122336] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Skull className="h-10 w-10 text-primary animate-bounce" />
+          <div className="h-1.5 w-24 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full w-1/2 bg-primary rounded-full animate-infinite-scroll shimmer-bg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-bg flex flex-col md:flex-row">
@@ -121,21 +145,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 );
               })}
             </nav>
-            <div className="pt-4 border-t border-border mt-auto space-y-3">
+            <div className="pt-4 border-t border-border mt-auto space-y-3.5">
+              {/* User Profile Info */}
+              {user && (
+                <div className="flex items-center gap-3 px-2 py-1">
+                  <div className="h-9 w-9 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-sm uppercase tracking-wide border border-primary/20 shrink-0">
+                    {user.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.role}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                >
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  <span>Theme</span>
+                </button>
+                <button
+                  onClick={logout}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-all font-bold"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log out</span>
+                </button>
+              </div>
+
               <button
                 onClick={handleResetDB}
                 disabled={resetting}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary text-sm transition-all"
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg border border-border/80 bg-transparent text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
               >
-                <RotateCcw className={`h-4 w-4 ${resetting ? "animate-spin" : ""}`} />
-                {resetting ? "Resetting..." : "Reset Database"}
-              </button>
-              <button
-                onClick={toggleTheme}
-                className="flex items-center justify-between w-full px-4 py-2.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary text-sm transition-all"
-              >
-                <span>Theme Mode</span>
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <RotateCcw className={`h-3.5 w-3.5 ${resetting ? "animate-spin" : ""}`} />
+                {resetting ? "Resetting..." : "Reset Seed Data"}
               </button>
             </div>
           </div>
@@ -172,21 +219,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
-        <div className="p-4 border-t border-border mt-auto space-y-2.5">
+        <div className="p-4 border-t border-border mt-auto space-y-3.5">
+          {/* User Profile Info */}
+          {user && (
+            <div className="flex items-center gap-3 px-2 py-1">
+              <div className="h-9 w-9 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs uppercase tracking-wide border border-primary/20 shrink-0">
+                {user.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{user.role}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              <span>Theme</span>
+            </button>
+            <button
+              onClick={logout}
+              className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-all font-bold"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Log out</span>
+            </button>
+          </div>
+
           <button
             onClick={handleResetDB}
             disabled={resetting}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            className="flex items-center justify-center gap-2 w-full py-1.5 rounded-md border border-border/60 bg-transparent text-[10px] text-muted-foreground/60 hover:text-foreground hover:bg-secondary transition-all"
           >
-            <RotateCcw className={`h-3.5 w-3.5 ${resetting ? "animate-spin" : ""}`} />
+            <RotateCcw className={`h-3 w-3 ${resetting ? "animate-spin" : ""}`} />
             {resetting ? "Resetting..." : "Reset Seed Data"}
-          </button>
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-between w-full px-4 py-2.5 rounded-lg border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
-          >
-            <span>{theme === "dark" ? "Dark Mode" : "Light Mode"}</span>
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
         </div>
       </aside>

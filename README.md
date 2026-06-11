@@ -1,5 +1,7 @@
 # 🪦 Startup Graveyard
-### Failure Intelligence & Due Diligence Canvas
+### Failure Intelligence & Due Diligence Canva
+
+
 
 > Most startup tools celebrate success stories. This one studies the dead — so you don't join them.
 
